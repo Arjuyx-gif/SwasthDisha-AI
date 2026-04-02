@@ -15,19 +15,15 @@ import {
 } from '@/lib/nutritionEngine';
 import type { FoodSearchResult } from '@/app/api/food-search/route';
 import {
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ResponsiveContainer,
   AreaChart,
   Area,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
+  ResponsiveContainer,
 } from 'recharts';
+import NutrientRings from '@/components/NutrientRings';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Apple,
@@ -50,6 +46,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getDietPlan } from '@/lib/dietEngine';
+import UserProfileModal from '@/components/UserProfileModal';
 
 function fmt(n: number, d = 1) {
   return Number(n.toFixed(d));
@@ -73,7 +70,7 @@ function JunkModal({
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="relative bg-[#1e1b2e] border border-orange-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-orange-500/20"
+        className="relative bg-[#0d1117] border border-orange-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-orange-500/20"
         initial={{ scale: 0.8, y: 40 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.8, y: 40 }}
@@ -186,13 +183,13 @@ function FoodSearch({
           <div
             ref={dropRef}
             style={{ position: 'fixed', top: dropPos.top, left: dropPos.left, width: dropPos.width, zIndex: 9999 }}
-            className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden max-h-[340px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
+            className="bg-[#0d1117] border border-slate-700 rounded-xl shadow-2xl overflow-hidden max-h-[340px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
           >
             {results.map((food) => (
               <button
                 key={food.name}
                 onMouseDown={(e) => { e.preventDefault(); handleSelect(food); }}
-                className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-slate-800 transition border-b border-slate-800/60 last:border-0"
+                className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-[#1a2030] transition border-b border-[#1a2030]/70 last:border-0"
               >
                 <div className="min-w-0">
                   <p className={`text-sm font-semibold truncate ${food.isJunk ? 'text-orange-400' : 'text-slate-200'}`}>
@@ -222,7 +219,7 @@ function FoodSearch({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 pointer-events-none" />
         <input
           ref={inputRef}
-          className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-10 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-orange-500/60 transition"
+          className="w-full bg-[#1a2030] border border-slate-700 rounded-xl pl-9 pr-10 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-orange-500/60 transition"
           placeholder="Search any Indian food (e.g. paneer, poha, rajmah…)"
           value={query}
           onChange={handleChange}
@@ -252,20 +249,22 @@ export default function NutritionPage() {
     addNutritionXP,
     resetDailyProgress,
     addXP,
-    reportText
+    reportText,
+    userProfile,
   } = useStore();
 
   const [junkFood, setJunkFood] = useState<string | null>(null);
   const [junkWarning, setJunkWarning] = useState('');
   const [isMounted, setIsMounted] = useState(false);
   const [coachingLanguage, setCoachingLanguage] = useState<'EN' | 'HI'>('EN');
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   const recommendations = getFoodRecommendations(dietaryFlags);
-  const targets = getDailyTargets(dietaryFlags);
+  const targets = getDailyTargets(dietaryFlags, userProfile);
   const radarData = computeNutrientRadar(labValues);
 
   // Daily log totals
@@ -284,6 +283,14 @@ export default function NutritionPage() {
   );
 
   const intakeRadarData = computeIntakeRadar(totals, targets);
+
+  const ringData = [
+    { name: 'Vitamin C', value: Math.min(100, (totals.vitaminC / targets.vitaminC) * 100) || 0, fill: '#a855f7' },
+    { name: 'Calcium', value: Math.min(100, (totals.calcium / targets.calcium) * 100) || 0, fill: '#3b82f6' },
+    { name: 'Iron', value: Math.min(100, (totals.iron / targets.iron) * 100) || 0, fill: '#ef4444' },
+    { name: 'Protein', value: Math.min(100, (totals.protein / targets.protein) * 100) || 0, fill: '#10b981' },
+    { name: 'Calories', value: Math.min(100, (totals.calories / targets.calories) * 100) || 0, fill: '#f97c0a' },
+  ];
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -353,7 +360,7 @@ export default function NutritionPage() {
   const progressBar = (val: number, max: number, color: string) => {
     const pct = Math.min(100, Math.round((val / max) * 100));
     return (
-      <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+      <div className="w-full h-2 bg-[#1a2030] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{ width: `${pct}%`, background: color }}
@@ -407,7 +414,7 @@ export default function NutritionPage() {
   }, [isMounted, labValues]);
 
   return (
-    <main className="min-h-screen bg-[#0F172A] p-4 md:p-8">
+    <main className="min-h-screen bg-[#070A0E] p-4 md:p-8">
 
       <AnimatePresence>
         {junkFood && (
@@ -419,19 +426,32 @@ export default function NutritionPage() {
         )}
       </AnimatePresence>
 
+      <UserProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} dietaryFlags={dietaryFlags} />
+
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-4xl font-black text-white uppercase tracking-tighter">
-              Nutrition <span className="text-[#f59e0b]">Lab</span>
+              Poshan <span className="text-[#f59e0b]">Lab</span>
             </h2>
-            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-1">
+            <p className="text-[#5a677d] font-bold uppercase tracking-widest text-xs mt-1">
               Personalised for · {condition}
             </p>
           </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowProfile(true)}
+              className={`flex items-center gap-2 px-4 py-2 rounded border text-xs font-bold uppercase tracking-wider transition-all
+                ${userProfile
+                  ? 'border-[#10b981]/30 bg-[#10b981]/8 text-[#10b981]'
+                  : 'border-[#f97c0a]/30 bg-[#f97c0a]/8 text-[#f97c0a] animate-pulse-saffron'}`}
+            >
+              {userProfile ? `👤 ${userProfile.age}y ${userProfile.gender === 'male' ? '♂' : '♀'} · ${targets.calories} kcal` : '⚙️ Set Your Profile'}
+            </button>
+          </div>
           {/* XP Bar */}
-          <Card className="bg-slate-900 border-slate-800 px-5 py-3 min-w-[220px]">
+          <Card className="bg-[#0d1117] border-[#1a2030] px-5 py-3 min-w-[220px]">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1">
                 <Zap className="w-3 h-3 text-[#f59e0b]" /> Daily Nutrition XP
@@ -440,7 +460,7 @@ export default function NutritionPage() {
                 {xpToday}/{xpGoal}
               </span>
             </div>
-            <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-[#1a2030] rounded-full overflow-hidden">
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
                 initial={{ width: 0 }}
@@ -453,54 +473,36 @@ export default function NutritionPage() {
 
         {/* Row 1: Radar + Search + Targets */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Radar */}
-          <Card className="bg-slate-900/50 border-slate-800 p-6 flex flex-col">
-            <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-4">
-              <TrendingUp className="w-4 h-4 text-[#f59e0b]" /> Your Nutrient Status
+          {/* Apple Watch Rings */}
+          <Card className="bg-[#0d1117]/70 border-[#1a2030] p-6 flex flex-col items-center">
+            <h3 className="text-sm font-black text-[#c8d3e0] uppercase tracking-widest flex items-center gap-2 mb-6 self-start">
+              <TrendingUp className="w-4 h-4 text-[#f97c0a]" /> Nutrient Rings
             </h3>
             {isMounted && (
-              <div className="w-full h-[320px] relative overflow-visible">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={intakeRadarData} cx="50%" cy="50%" outerRadius="80%">
-                    <PolarGrid stroke="#334155" />
-                    <PolarAngleAxis
-                      dataKey="nutrient"
-                      tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 'bold' }}
-                    />
-                    <PolarRadiusAxis
-                      angle={30}
-                      domain={[0, 100]}
-                      tick={false}
-                      axisLine={false}
-                    />
-                    <Radar
-                      name="Intake %"
-                      dataKey="value"
-                      stroke="#f59e0b"
-                      fill="#f59e0b"
-                      fillOpacity={0.5}
-                      animationBegin={0}
-                      animationDuration={1000}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
+              <NutrientRings
+                caloriesConsumed={totals.calories}
+                caloriesTarget={targets.calories}
+                rings={[
+                  { name: 'Calories',  value: Math.min(100,(totals.calories / targets.calories)*100)||0,  color: '#f97c0a', actual: totals.calories,  unit: 'kcal' },
+                  { name: 'Protein',   value: Math.min(100,(totals.protein  / targets.protein) *100)||0,  color: '#10b981', actual: totals.protein,   unit: 'g' },
+                  { name: 'Iron',      value: Math.min(100,(totals.iron     / targets.iron)    *100)||0,  color: '#ef4444', actual: totals.iron,      unit: 'mg' },
+                  { name: 'Calcium',   value: Math.min(100,(totals.calcium  / targets.calcium) *100)||0,  color: '#3b82f6', actual: totals.calcium,   unit: 'mg' },
+                  { name: 'Vit C',     value: Math.min(100,(totals.vitaminC / targets.vitaminC)*100)||0,  color: '#a855f7', actual: totals.vitaminC,  unit: 'mg' },
+                ]}
+              />
             )}
-            <p className="text-xs text-slate-500 mt-2 text-center">
-              Based on your latest lab report values
-            </p>
           </Card>
 
           {/* Search + Daily Targets */}
           <div className="flex flex-col gap-4 overflow-visible">
-            <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 overflow-visible relative">
+            <div className="bg-[#0d1117] border border-slate-700 rounded-xl p-4 overflow-visible relative">
               <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-3">
                 <Search className="w-4 h-4 text-orange-400" /> Log a Food
               </h3>
               <FoodSearch dietaryFlags={dietaryFlags} onSelect={handleLogFood} />
             </div>
 
-            <Card className="bg-slate-900 border-slate-800 p-4 flex-1">
+            <Card className="bg-[#0d1117] border-slate-800 p-4 flex-1">
               <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-4">
                 <Flame className="w-4 h-4 text-orange-500" /> Daily Targets
               </h3>
@@ -538,16 +540,16 @@ export default function NutritionPage() {
               className="grid grid-cols-1 lg:grid-cols-3 gap-6"
             >
               {/* AI Coaching Box */}
-              <Card className="lg:col-span-1 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent border-indigo-500/20 p-6 relative overflow-hidden flex flex-col justify-between">
+              <Card className="lg:col-span-1 bg-gradient-to-br from-[#10b981]/8 via-[#10b981]/3 to-transparent border-[#10b981]/15 p-6 relative overflow-hidden flex flex-col justify-between">
                 <div className="absolute top-0 right-0 p-3 opacity-20 pointer-events-none">
-                  <Sparkles className="w-12 h-12 text-indigo-400" />
+                  <Sparkles className="w-12 h-12 text-[#10b981]" />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-black text-indigo-300 uppercase tracking-widest flex items-center gap-2">
                       <MessageSquareQuote className="w-4 h-4" /> AI Coaching Insight
                     </h3>
-                    <div className="flex bg-slate-800/50 p-1 rounded-lg border border-indigo-500/20">
+                    <div className="flex bg-[#1a2030]/60 p-1 rounded-lg border border-[#10b981]/20">
                       <button 
                         onClick={() => setCoachingLanguage('EN')}
                         className={`px-2 py-1 text-[9px] font-bold rounded transition-all ${coachingLanguage === 'EN' ? 'bg-[#f59e0b] text-white' : 'text-slate-500'}`}
@@ -561,26 +563,69 @@ export default function NutritionPage() {
                   <div className="relative">
                     {isInsightLoading && !aiInsight ? (
                       <div className="flex items-center gap-3 py-4">
-                        <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
-                        <span className="text-xs text-indigo-400/70 font-mono tracking-tighter">Analyzing your report context...</span>
+                        <Loader2 className="w-4 h-4 text-[#10b981] animate-spin" />
+                        <span className="text-xs text-[#10b981]/70 font-mono tracking-tighter">Analyzing your report context...</span>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         {(() => {
-                          const parts = aiInsight.split('HI:');
-                          const en = parts[0].replace('EN:', '').trim();
-                          const hi = parts[1]?.trim() || '';
+                          const parts = aiInsight.split(/\n?HI:\n?/);
+                          const en = parts[0].replace(/^EN:\n?/, '').trim();
+                          const hi = (parts[1] || '').trim();
                           const content = coachingLanguage === 'EN' ? en : hi;
-                          
-                          if (!content) return <p className="text-[13px] leading-relaxed text-slate-300 italic">"{aiInsight || 'Loading your personalized advice...'}"</p>;
+
+                          if (!content) return (
+                            <p className="text-[13px] leading-relaxed text-[#8a97aa] italic">
+                              {aiInsight || 'Loading your personalized advice...'}
+                            </p>
+                          );
+
+                          // Inline markdown renderer: handles **bold text** within a string
+                          const renderInline = (text: string) => {
+                            const segments = text.split(/(\*\*[^*]+\*\*)/g);
+                            return segments.map((seg, i) => {
+                              if (seg.startsWith('**') && seg.endsWith('**')) {
+                                return (
+                                  <strong key={i} className="text-white font-bold">
+                                    {seg.slice(2, -2)}
+                                  </strong>
+                                );
+                              }
+                              // handle *italic*
+                              const italicParts = seg.split(/(\*[^*]+\*)/g);
+                              return italicParts.map((part, j) =>
+                                part.startsWith('*') && part.endsWith('*')
+                                  ? <em key={`${i}-${j}`} className="text-[#c8d3e0] italic">{part.slice(1, -1)}</em>
+                                  : <span key={`${i}-${j}`}>{part}</span>
+                              );
+                            });
+                          };
 
                           return content.split('\n').map((line, idx) => {
-                            const cleanLine = line.replace(/^- /, '').trim();
-                            if (!cleanLine) return null;
+                            const raw = line.trim();
+                            if (!raw) return null;
+
+                            // Lines like **Label:** value — render as a highlighted card row
+                            const boldLabelMatch = raw.match(/^\*\*(.+?)\*\*[:\s]+(.+)$/);
+                            if (boldLabelMatch) {
+                              return (
+                                <div key={idx} className="flex gap-3 items-start bg-[#0d1117] border border-[#1a2030] rounded px-3 py-2.5">
+                                  <span className="text-[#10b981] text-xs mt-0.5 flex-shrink-0">✦</span>
+                                  <p className="text-[13px] leading-relaxed text-[#c8d3e0]">
+                                    <strong className="text-white font-bold">{boldLabelMatch[1]}: </strong>
+                                    {renderInline(boldLabelMatch[2])}
+                                  </p>
+                                </div>
+                              );
+                            }
+
+                            // Regular line — render with bullet and inline markdown
                             return (
                               <div key={idx} className="flex gap-2 items-start">
-                                <span className="text-indigo-400 mt-1">✦</span>
-                                <p className="text-[13px] leading-relaxed text-slate-200">{cleanLine}</p>
+                                <span className="text-[#10b981] mt-1 flex-shrink-0">✦</span>
+                                <p className="text-[13px] leading-relaxed text-[#c8d3e0]">
+                                  {renderInline(raw)}
+                                </p>
                               </div>
                             );
                           });
@@ -589,9 +634,9 @@ export default function NutritionPage() {
                     )}
                   </div>
                 </div>
-                <div className="mt-6 pt-4 border-t border-indigo-500/10 flex justify-between items-center text-[10px] text-indigo-400/60 uppercase font-black">
+                <div className="mt-6 pt-4 border-t border-[#10b981]/10 flex justify-between items-center text-[10px] text-[#10b981]/60 uppercase font-black">
                   <span>Dr. Umeed AI v2.0</span>
-                  <button onClick={fetchAiInsight} className="hover:text-indigo-300 transition-colors flex items-center gap-1 group">
+                  <button onClick={fetchAiInsight} className="hover:text-[#10b981] transition-colors flex items-center gap-1 group">
                     Regenerate <Zap className="w-2.5 h-2.5 group-hover:scale-110 transition-transform" />
                   </button>
                 </div>
@@ -600,7 +645,7 @@ export default function NutritionPage() {
               {/* Rule-Based Consume/Avoid Table */}
               <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Consume List */}
-                <Card className="bg-slate-900 border-green-500/20 p-5 border-l-4 border-l-green-500 shadow-xl">
+                <Card className="bg-[#0d1117] border-green-500/20 p-5 border-l-4 border-l-green-500 shadow-xl">
                   <h4 className="text-[11px] font-black text-green-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                     <Check className="w-4 h-4" /> Focus on These
                   </h4>
@@ -618,7 +663,7 @@ export default function NutritionPage() {
                 </Card>
 
                 {/* Avoid List */}
-                <Card className="bg-slate-900 border-red-500/20 p-5 border-l-4 border-l-red-500 shadow-xl">
+                <Card className="bg-[#0d1117] border-red-500/20 p-5 border-l-4 border-l-red-500 shadow-xl">
                   <h4 className="text-[11px] font-black text-red-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                     <Ban className="w-4 h-4" /> Strictly Avoid
                   </h4>
@@ -671,13 +716,13 @@ export default function NutritionPage() {
                         className="relative pl-8"
                       >
                         {/* Dot */}
-                        <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-slate-900 border-2 border-amber-500" />
+                        <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-[#0d1117] border-2 border-amber-500" />
                         
                         <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter w-16">
                             {slot.time}
                           </span>
-                          <div className="flex-1 bg-slate-800/30 rounded-xl p-3 border border-slate-800/50 hover:border-amber-500/30 transition-colors">
+                          <div className="flex-1 bg-[#1a2030]/40 rounded-xl p-3 border border-[#1a2030]/60 hover:border-amber-500/30 transition-colors">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs font-bold text-slate-200">
                                 {coachingLanguage === 'EN' ? slot.activity : slot.activityHi}
@@ -690,8 +735,8 @@ export default function NutritionPage() {
                               <span className="text-amber-500/80">✦ </span>
                               {coachingLanguage === 'EN' ? slot.foods : slot.foodsHi}
                             </p>
-                            <div className="mt-2 pt-2 border-t border-slate-800/50 flex items-start gap-2">
-                              <Sparkles className="w-2.5 h-2.5 text-indigo-400 mt-0.5" />
+                            <div className="mt-2 pt-2 border-t border-[#1a2030]/60 flex items-start gap-2">
+                              <Sparkles className="w-2.5 h-2.5 text-[#10b981] mt-0.5" />
                               <p className="text-[10px] text-slate-500 italic">
                                 {coachingLanguage === 'EN' ? slot.tip : slot.tipHi}
                               </p>
@@ -720,7 +765,7 @@ export default function NutritionPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
               >
-                <Card className="bg-slate-900 border-slate-800 p-4 hover:border-orange-500/50 transition-all group flex flex-col h-full">
+                <Card className="bg-[#0d1117] border-slate-800 p-4 hover:border-orange-500/50 transition-all group flex flex-col h-full">
                   <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">
                     {food.emoji}
                   </div>
@@ -733,7 +778,7 @@ export default function NutritionPage() {
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {food.tags.map((t) => (
-                      <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                      <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-[#1a2030] text-slate-400">
                         {t}
                       </span>
                     ))}
@@ -755,7 +800,7 @@ export default function NutritionPage() {
 
         {/* Row 3: XP Chart + Food Log */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="bg-slate-900/50 border-slate-800 p-6">
+          <Card className="bg-[#0d1117]/70 border-slate-800 p-6">
             <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-4">
               <Star className="w-4 h-4 text-[#f59e0b]" /> 7-Day Nutrition XP
             </h3>
@@ -784,7 +829,7 @@ export default function NutritionPage() {
             )}
           </Card>
 
-          <Card className="bg-slate-900/50 border-slate-800 p-6">
+          <Card className="bg-[#0d1117]/70 border-slate-800 p-6">
             <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-4">
               <Leaf className="w-4 h-4 text-green-500" /> Today's Food Log
             </h3>
@@ -800,7 +845,7 @@ export default function NutritionPage() {
                     className={`flex items-center justify-between rounded-xl px-3 py-2 ${
                       f.isJunk
                         ? 'bg-red-500/10 border border-red-500/20'
-                        : 'bg-slate-800/50 border border-slate-700/30'
+                        : 'bg-[#1a2030]/60 border border-slate-700/30'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">

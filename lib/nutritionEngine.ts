@@ -218,21 +218,61 @@ export type NutrientTarget = {
   folate: number;
 };
 
-export function getDailyTargets(dietaryFlags: string[]): NutrientTarget {
+export function getDailyTargets(
+  dietaryFlags: string[],
+  profile?: { gender: 'male' | 'female'; age: number; weightKg: number; heightCm: number; activityLevel: 'sedentary' | 'light' | 'moderate' | 'active'; goal?: 'maintain' | 'lose' | 'gain' } | null
+): NutrientTarget {
+
+  /* ── Step 1: Base calorie target ─────────────────────────── */
+  let calories: number;
+
+  if (profile) {
+    // Mifflin-St Jeor BMR
+    const bmr = profile.gender === 'male'
+      ? (10 * profile.weightKg) + (6.25 * profile.heightCm) - (5 * profile.age) + 5
+      : (10 * profile.weightKg) + (6.25 * profile.heightCm) - (5 * profile.age) - 161;
+
+    // Activity multiplier → TDEE
+    const activityMap = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725 };
+    const tdee = bmr * activityMap[profile.activityLevel];
+
+    // Condition adjustment
+    let conditionMultiplier = 1.0;
+    if (dietaryFlags.some(f => ['LOW_FAT','LIVER_DETOX_DIET','HEART_HEALTHY_DIET'].includes(f)))  conditionMultiplier = 0.85;
+    else if (dietaryFlags.some(f => ['LOW_GLYCEMIC_DIET'].includes(f)))                           conditionMultiplier = 0.90;
+    else if (dietaryFlags.some(f => ['KIDNEY_FRIENDLY_DIET'].includes(f)))                         conditionMultiplier = 0.80;
+
+    // Goal adjustment (applied after condition multiplier)
+    const goalOffset = profile.goal === 'lose' ? -400 : profile.goal === 'gain' ? +300 : 0;
+
+    calories = Math.round(tdee * conditionMultiplier) + goalOffset;
+    calories = Math.max(1200, calories); // safety floor — never go below 1200 kcal
+  } else {
+    // Fallback — condition-based flat targets (no profile)
+    if (dietaryFlags.includes('IRON_RICH') || dietaryFlags.includes('ANEMIA_DIET'))                      calories = 1800;
+    else if (dietaryFlags.some(f => ['LOW_FAT','LIVER_DETOX_DIET','HEART_HEALTHY_DIET'].includes(f)))    calories = 1600;
+    else if (dietaryFlags.some(f => ['CALCIUM_RICH','VITAMIN_D_RICH'].includes(f)))                      calories = 1800;
+    else if (dietaryFlags.includes('LOW_GLYCEMIC_DIET'))                                                  calories = 1700;
+    else if (dietaryFlags.includes('KIDNEY_FRIENDLY_DIET'))                                               calories = 1800;
+    else                                                                                                   calories = 2000;
+  }
+
+  /* ── Step 2: Micronutrient targets by condition ──────────── */
   if (dietaryFlags.includes('IRON_RICH') || dietaryFlags.includes('ANEMIA_DIET')) {
-    return { calories: 1800, protein: 55, iron: 18, calcium: 1000, vitaminC: 65, vitaminD: 15, vitaminB12: 2.4, folate: 400 };
+    return { calories, protein: 55,  iron: 18, calcium: 1000, vitaminC: 65, vitaminD: 15, vitaminB12: 2.4, folate: 400 };
   }
-  if (dietaryFlags.includes('LOW_FAT') || dietaryFlags.includes('LIVER_DETOX_DIET') || dietaryFlags.includes('HEART_HEALTHY_DIET')) {
-    return { calories: 1600, protein: 50, iron: 15, calcium: 1200, vitaminC: 60, vitaminD: 15, vitaminB12: 2.4, folate: 400 };
+  if (dietaryFlags.some(f => ['LOW_FAT','LIVER_DETOX_DIET','HEART_HEALTHY_DIET'].includes(f))) {
+    return { calories, protein: 50,  iron: 15, calcium: 1200, vitaminC: 60, vitaminD: 15, vitaminB12: 2.4, folate: 400 };
   }
-  if (dietaryFlags.includes('CALCIUM_RICH') || dietaryFlags.includes('VITAMIN_D_RICH')) {
-    return { calories: 1800, protein: 60, iron: 15, calcium: 1200, vitaminC: 70, vitaminD: 20, vitaminB12: 2.4, folate: 400 };
+  if (dietaryFlags.some(f => ['CALCIUM_RICH','VITAMIN_D_RICH'].includes(f))) {
+    return { calories, protein: 60,  iron: 15, calcium: 1200, vitaminC: 70, vitaminD: 20, vitaminB12: 2.4, folate: 400 };
   }
   if (dietaryFlags.includes('LOW_GLYCEMIC_DIET')) {
-    return { calories: 1700, protein: 55, iron: 14, calcium: 1000, vitaminC: 60, vitaminD: 15, vitaminB12: 2.4, folate: 400 };
+    return { calories, protein: 55,  iron: 14, calcium: 1000, vitaminC: 60, vitaminD: 15, vitaminB12: 2.4, folate: 400 };
   }
   if (dietaryFlags.includes('KIDNEY_FRIENDLY_DIET')) {
-    return { calories: 1800, protein: 45, iron: 14, calcium: 800, vitaminC: 60, vitaminD: 10, vitaminB12: 2.0, folate: 300 };
+    return { calories, protein: 45,  iron: 14, calcium: 800,  vitaminC: 60, vitaminD: 10, vitaminB12: 2.0, folate: 300 };
   }
-  return { calories: 2000, protein: 50, iron: 14, calcium: 1000, vitaminC: 60, vitaminD: 15, vitaminB12: 2.4, folate: 400 };
+  return   { calories, protein: 50,  iron: 14, calcium: 1000, vitaminC: 60, vitaminD: 15, vitaminB12: 2.4, folate: 400 };
 }
+
