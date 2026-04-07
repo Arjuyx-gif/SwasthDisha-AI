@@ -2,6 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { translations, Language } from './translations';
 
+export type UserProfile = {
+  gender: 'male' | 'female';
+  age: number;
+  weightKg: number;
+  heightCm: number;
+  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active';
+  goal: 'maintain' | 'lose' | 'gain';
+};
+
 export type LabValue = {
   name: string;
   value: number;
@@ -92,8 +101,11 @@ export type GUCState = {
   // Persisted across reloads
   xpHistory: XPHistory[];
 
+  userProfile: UserProfile | null;
+
   // Actions
   setReportData: (data: Partial<GUCState>) => void;
+  setUserProfile: (profile: UserProfile) => void;
   toggleLanguage: () => void;
   toggleChecklistItem: (id: string) => void;
   addXP: (amount: number) => void;
@@ -103,6 +115,7 @@ export type GUCState = {
   logExercise: (exercise: LoggedExercise) => void;
   logDailyVital: (vital: DailyVital) => void;
   saveReportToHistory: () => void;
+  deleteReport: (id: string) => void;
   resetDailyProgress: () => void;
   t: (key: string) => string;
   reset: () => void;
@@ -135,6 +148,7 @@ const initialState: Omit<
   | 'logExercise'
   | 'logDailyVital'
   | 'saveReportToHistory'
+  | 'deleteReport'
   | 'resetDailyProgress'
   | 't'
   | 'reset'
@@ -153,6 +167,7 @@ const initialState: Omit<
   xp: 0,
   level: 1,
   age: null,
+  userProfile: null,
   reportHistory: [],
   dailyVitals: [],
   avatarState: 'IDLE',
@@ -168,6 +183,8 @@ export const useStore = create<GUCState>()(
   persist(
     (set, get) => ({
       ...initialState,
+
+      setUserProfile: (profile) => set({ userProfile: profile }),
 
       setReportData: (data) =>
         set((state) => ({
@@ -212,6 +229,11 @@ export const useStore = create<GUCState>()(
           const newHistory = [newSnapshot, ...state.reportHistory].slice(0, 20);
           return { reportHistory: newHistory };
         }),
+
+      deleteReport: (id) =>
+        set((state) => ({
+          reportHistory: state.reportHistory.filter((r) => r.id !== id),
+        })),
 
       toggleLanguage: () =>
         set((state) => ({ language: state.language === 'EN' ? 'HI' : 'EN' })),
@@ -316,6 +338,7 @@ export const useStore = create<GUCState>()(
         ai_confidence_score: state.ai_confidence_score,
         checklist: state.checklist,
         age: state.age,
+        userProfile: state.userProfile,
         reportHistory: state.reportHistory,
         dailyVitals: state.dailyVitals,
       }),
