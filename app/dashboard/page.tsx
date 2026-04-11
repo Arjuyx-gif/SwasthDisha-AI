@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Activity, 
   AlertCircle, 
   ArrowRight, 
   CheckCircle2, 
@@ -23,7 +22,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LabTable } from '@/components/LabTable';
-import { BodyMap } from '@/components/BodyMap';
 import { Checklist } from '@/components/Checklist';
 import { DoctorChat } from '@/components/DoctorChat';
 import { 
@@ -118,7 +116,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Card B: AI Doctor Explanation */}
-        <motion.div variants={item} className="md:col-span-5 h-full">
+        <motion.div variants={item} className="md:col-span-8 h-full">
           <Card className="h-full bg-slate-900 border-slate-800 p-8 shadow-xl shadow-black/50 relative overflow-hidden backdrop-blur-md">
             <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-500 to-transparent opacity-50" />
             <div className="flex justify-between items-start mb-6">
@@ -142,18 +140,7 @@ export default function Dashboard() {
           </Card>
         </motion.div>
 
-        {/* Card C: Body Map */}
-        <motion.div variants={item} className="md:col-span-3 h-full">
-          <Card className="bg-slate-900/50 border-slate-800 p-6 h-full flex flex-col items-center hover:border-slate-700 transition-colors cursor-default shadow-lg">
-            <div className="flex self-start items-center gap-2 mb-6 text-slate-400">
-              <Activity className="w-4 h-4 text-rose-500" />
-              <h3 className="font-bold text-xs uppercase tracking-widest">{t('affected_areas')}</h3>
-            </div>
-            <div className="flex-1 w-full flex items-center justify-center py-4">
-              <BodyMap />
-            </div>
-          </Card>
-        </motion.div>
+
 
         {/* Card D: Lab Table (Full Width) */}
         <motion.div variants={item} className="md:col-span-9 h-full">
