@@ -31,14 +31,15 @@ import {
   Settings2,
   X,
   Zap,
-  RotateCcw
+  RotateCcw,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { getVitalReferenceRange } from '@/lib/vitalsEngine';
 
 export default function VitalsVault() {
-  const { reportHistory, dailyVitals, logDailyVital, setReportData, t } = useStore();
+  const { reportHistory, dailyVitals, logDailyVital, setReportData, deleteReport, t } = useStore();
   const [selectedBiomarker, setSelectedBiomarker] = useState<string>('');
   const [showLogModal, setShowLogModal] = useState(false);
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
@@ -129,13 +130,13 @@ export default function VitalsVault() {
 
   if (history.length === 0) {
     return (
-      <main className="min-h-screen bg-[#0f111a] text-slate-100 p-6 pb-32 flex flex-col items-center justify-center text-center">
+      <main className="min-h-screen bg-[#070A0E] text-slate-100 p-6 pb-32 flex flex-col items-center justify-center text-center">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-md space-y-6"
         >
-          <div className="w-24 h-24 bg-slate-900 rounded-3xl border border-slate-800 flex items-center justify-center mx-auto shadow-2xl">
+          <div className="w-24 h-24 bg-[#0d1117] rounded-3xl border border-slate-800 flex items-center justify-center mx-auto shadow-2xl">
             <Database className="w-10 h-10 text-indigo-500" />
           </div>
           <h1 className="text-3xl font-black tracking-tight">Vitals Vault is Empty</h1>
@@ -151,7 +152,7 @@ export default function VitalsVault() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0f111a] text-slate-100 p-6 pb-32">
+    <main className="min-h-screen bg-[#070A0E] text-slate-100 p-6 pb-32">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -170,7 +171,7 @@ export default function VitalsVault() {
              >
                <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" /> Log Vital
              </button>
-             <div className="px-4 py-2 bg-slate-900/50 border border-slate-800 rounded-xl flex items-center gap-2 hidden md:flex">
+             <div className="px-4 py-2 bg-[#0d1117]/70 border border-slate-800 rounded-xl flex items-center gap-2 hidden md:flex">
                 <History className="w-4 h-4 text-slate-400" />
                 <span className="text-xs font-black text-slate-300 uppercase">{history.length + vitals.length} Logs</span>
              </div>
@@ -185,7 +186,7 @@ export default function VitalsVault() {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-slate-900 border border-slate-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative"
+                className="bg-[#0d1117] border border-slate-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative"
               >
                 <button 
                   onClick={() => setShowLogModal(false)}
@@ -214,7 +215,7 @@ export default function VitalsVault() {
                         <button
                           key={t.id}
                           onClick={() => setVitalType(t.id as any)}
-                          className={`px-3 py-2 text-[10px] font-black rounded-lg border transition-all ${vitalType === t.id ? 'bg-indigo-500 border-indigo-400 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                          className={`px-3 py-2 text-[10px] font-black rounded-lg border transition-all ${vitalType === t.id ? 'bg-indigo-500 border-indigo-400 text-white shadow-lg shadow-indigo-500/20' : 'bg-[#1a2030] border-slate-700 text-slate-400 hover:border-slate-600'}`}
                         >
                           {t.label}
                         </button>
@@ -229,7 +230,7 @@ export default function VitalsVault() {
                       value={vitalValue}
                       onChange={(e) => setVitalValue(e.target.value)}
                       placeholder="Enter numeric value..."
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white font-black placeholder:text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none"
+                      className="w-full bg-[#1a2030] border border-slate-700 rounded-xl px-4 py-3 text-white font-black placeholder:text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none"
                     />
                   </div>
 
@@ -248,7 +249,7 @@ export default function VitalsVault() {
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Vitality Index Card */}
-          <Card className="bg-slate-900 border-slate-800 p-6 relative overflow-hidden group">
+          <Card className="bg-[#0d1117] border-slate-800 p-6 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <ShieldCheck className="w-24 h-24 text-indigo-500" />
             </div>
@@ -263,17 +264,17 @@ export default function VitalsVault() {
                 <div className="text-[10px] text-slate-500 font-bold uppercase">vs last report</div>
               </div>
             </div>
-            <div className="mt-6 h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div className="mt-6 h-2 bg-[#1a2030] rounded-full overflow-hidden">
                <motion.div 
                  initial={{ width: 0 }}
                  animate={{ width: `${vitalityScore}%` }}
-                 className="h-full bg-gradient-to-r from-indigo-600 to-purple-500"
+                 className="h-full bg-gradient-to-r from-[#f97c0a] to-[#ea5f04]"
                />
             </div>
           </Card>
 
           {/* Biomarker Trend Card */}
-          <Card className="md:col-span-2 bg-[#171923] border-slate-800 p-6 overflow-hidden">
+          <Card className="md:col-span-2 bg-[#0d1117] border-slate-800 p-6 overflow-hidden">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20">
@@ -290,7 +291,7 @@ export default function VitalsVault() {
                </div>
                
                <div className="flex items-center gap-3">
-                 <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-lg mr-2">
+                 <div className="flex bg-[#0d1117] border border-slate-800 p-1 rounded-lg mr-2">
                     <button 
                       onClick={() => setChartMode('VITALITY')}
                       className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-md transition-all ${chartMode === 'VITALITY' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
@@ -313,7 +314,7 @@ export default function VitalsVault() {
                        exit={{ opacity: 0, x: 10 }}
                        value={selectedBiomarker}
                        onChange={(e) => setSelectedBiomarker(e.target.value)}
-                       className="bg-slate-900 border border-slate-800 text-[10px] font-black uppercase text-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 transition-all outline-none appearance-none cursor-pointer pr-10 bg-no-repeat bg-[right_0.75rem_center]"
+                       className="bg-[#0d1117] border border-slate-800 text-[10px] font-black uppercase text-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 transition-all outline-none appearance-none cursor-pointer pr-10 bg-no-repeat bg-[right_0.75rem_center]"
                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 5 3 3 3-3'/%3E%3C/svg%3E")` }}
                      >
                        {availableBiomarkers.map(b => (
@@ -338,8 +339,8 @@ export default function VitalsVault() {
                   <AreaChart data={activeTrendData}>
                     <defs>
                       <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={chartMode === 'VITALITY' ? '#6366f1' : '#f59e0b'} stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor={chartMode === 'VITALITY' ? '#6366f1' : '#f59e0b'} stopOpacity={0}/>
+                        <stop offset="5%" stopColor={chartMode === 'VITALITY' ? '#f97c0a' : '#f59e0b'} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={chartMode === 'VITALITY' ? '#f97c0a' : '#f59e0b'} stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
@@ -357,7 +358,7 @@ export default function VitalsVault() {
                       contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '12px' }}
                       itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }}
                       labelStyle={{ color: '#64748b', fontSize: '10px', marginBottom: '4px', textTransform: 'uppercase' }}
-                      cursor={{ stroke: '#6366f133', strokeWidth: 2 }}
+                      cursor={{ stroke: '#f97c0a33', strokeWidth: 2 }}
                     />
                     {chartMode === 'BIOMARKER' && referenceRange && (
                        <ReferenceArea 
@@ -371,7 +372,7 @@ export default function VitalsVault() {
                     <Area 
                       type="monotone" 
                       dataKey="value" 
-                      stroke={chartMode === 'VITALITY' ? '#6366f1' : '#f59e0b'} 
+                      stroke={chartMode === 'VITALITY' ? '#f97c0a' : '#f59e0b'} 
                       strokeWidth={3}
                       fillOpacity={1} 
                       fill="url(#colorValue)" 
@@ -380,7 +381,7 @@ export default function VitalsVault() {
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-center p-4 bg-slate-900/30 rounded-2xl border border-dashed border-slate-800">
+                <div className="h-full flex flex-col items-center justify-center text-center p-4 bg-[#0d1117]/50 rounded-2xl border border-dashed border-slate-800">
                    <ShieldAlert className="w-6 h-6 text-slate-600 mb-2" />
                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest max-w-[200px]">
                      {chartMode === 'VITALITY' 
@@ -410,11 +411,11 @@ export default function VitalsVault() {
                 <div className="space-y-4">
                   <Card 
                     onClick={() => setExpandedReportId(expandedReportId === report.id ? null : report.id)}
-                    className={`bg-slate-900/40 border-slate-800 hover:border-indigo-500/30 p-5 transition-all group cursor-pointer relative ${expandedReportId === report.id ? 'border-indigo-500/40 ring-1 ring-indigo-500/20 shadow-2xl' : ''}`}
+                    className={`bg-[#0d1117]/60 border-slate-800 hover:border-indigo-500/30 p-5 transition-all group cursor-pointer relative ${expandedReportId === report.id ? 'border-indigo-500/40 ring-1 ring-indigo-500/20 shadow-2xl' : ''}`}
                   >
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex flex-col items-center justify-center text-center leading-none">
+                          <div className="w-12 h-12 rounded-2xl bg-[#1a2030] border border-slate-700 flex flex-col items-center justify-center text-center leading-none">
                               <span className="text-[10px] font-black text-slate-500 uppercase">{new Date(report.date).toLocaleDateString('en-US', { month: 'short' })}</span>
                               <span className="text-lg font-black text-slate-200">{new Date(report.date).getDate()}</span>
                           </div>
@@ -432,7 +433,7 @@ export default function VitalsVault() {
                               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Vitals Tracked</p>
                               <p className="text-xs font-bold text-slate-300">{report.labValues.length} Biomarkers</p>
                           </div>
-                          <div className={`w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-indigo-600 transition-all ${expandedReportId === report.id ? 'rotate-90 bg-indigo-600' : ''}`}>
+                          <div className={`w-8 h-8 rounded-full bg-[#1a2030] flex items-center justify-center group-hover:bg-indigo-600 transition-all ${expandedReportId === report.id ? 'rotate-90 bg-indigo-600' : ''}`}>
                               <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white" />
                           </div>
                         </div>
@@ -447,14 +448,27 @@ export default function VitalsVault() {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
-                        <Card className="bg-slate-900/60 border-slate-800 ml-6 md:ml-16 p-6 space-y-6 relative">
+                        <Card className="bg-[#0d1117]/80 border-slate-800 ml-6 md:ml-16 p-6 space-y-6 relative">
                           <div className="absolute top-4 right-4 flex gap-2">
                              <button 
                                onClick={() => handleRestore(report)}
-                               className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-2 text-[9px] font-black uppercase"
+                               className="p-2 bg-[#1a2030] hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-2 text-[9px] font-black uppercase"
                                title="Restore Context"
                              >
                                <RotateCcw className="w-3.5 h-3.5" /> Restore
+                             </button>
+                             <button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 if (confirm('Delete this report from history? This cannot be undone.')) {
+                                   deleteReport(report.id);
+                                   setExpandedReportId(null);
+                                 }
+                               }}
+                               className="p-2 bg-[#ef4444]/10 hover:bg-[#ef4444] rounded-lg text-[#ef4444] hover:text-white transition-all flex items-center gap-2 text-[9px] font-black uppercase"
+                               title="Delete Report"
+                             >
+                               <Trash2 className="w-3.5 h-3.5" /> Delete
                              </button>
                              <a 
                                href="/"
@@ -468,7 +482,7 @@ export default function VitalsVault() {
                             <h5 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-4">Detailed Lab Values</h5>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {report.labValues.map((v, i) => (
-                                <div key={i} className="p-3 bg-slate-950/50 rounded-xl border border-slate-800 flex justify-between items-center group/item hover:border-slate-700 transition-all">
+                                <div key={i} className="p-3 bg-[#070A0E]/80 rounded-xl border border-slate-800 flex justify-between items-center group/item hover:border-slate-700 transition-all">
                                   <div>
                                     <p className="text-[11px] font-black text-slate-200 uppercase">{v.name}</p>
                                     <p className="text-[9px] text-slate-500 font-bold">{v.referenceRange}</p>

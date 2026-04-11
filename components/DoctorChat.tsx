@@ -39,19 +39,65 @@ export const DoctorChat = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const parseMessage = (content: string) => {
-    const enMatch = content.match(/EN:([\s\S]*?)(?=HI:|$)/);
-    const hiMatch = content.match(/HI:([\s\S]*?)$/);
+    // Match both "HI:" and "HI/HINGLISH:" delimiters
+    const enMatch = content.match(/EN:([\s\S]*?)(?=HI(?:\/HINGLISH)?:|$)/);
+    const hiMatch = content.match(/HI(?:\/HINGLISH)?:([\s\S]*?)$/);
+    const enText = enMatch ? enMatch[1].trim() : '';
+    const hiText = hiMatch ? hiMatch[1].trim() : '';
+    // For general/casual responses that have no EN:/HI: structure,
+    // just return the raw content for both so neither tab goes blank
+    const isStructured = enMatch !== null;
     return {
-      en: enMatch ? enMatch[1].trim() : content,
-      hi: hiMatch ? hiMatch[1].trim() : ''
+      en: isStructured ? enText : content,
+      hi: isStructured ? (hiText || enText) : content,
     };
   };
 
   const lowValues = labValues.filter((v: any) => v.status === 'LOW').map((v: any) => v.name);
-  const suggestions = [
-    `Tell me more about my ${lowValues[0] || 'report'}`,
-    "What foods should I eat?",
-    "Is this serious?",
+
+  const suggestionCategories = [
+    {
+      label: '🧪 My Report',
+      items: [
+        lowValues[0] ? `Mera ${lowValues[0]} low kyun hai?` : 'Explain my lab report',
+        'Is anything in my report serious?',
+      ],
+    },
+    {
+      label: '🥗 Diet & Food',
+      items: [
+        'Diabetes mein kya khana chahiye?',
+        'Iron badhane ke liye best Indian foods?',
+      ],
+    },
+    {
+      label: '🤒 Symptoms',
+      items: [
+        'Mujhe bahut thakaan ho rahi hai — kyun?',
+        'Chest mein dard ho raha hai, kya karoon?',
+      ],
+    },
+    {
+      label: '🌿 Home Remedies',
+      items: [
+        'Sugar control ke liye ghar pe kya karein?',
+        'Neend nahi aa rahi — koi nuskha?',
+      ],
+    },
+    {
+      label: '🧠 Mental Health',
+      items: [
+        'Mujhe bahut anxiety feel hoti hai',
+        'Stress kam karne ke tips batao',
+      ],
+    },
+    {
+      label: '💊 Medicines',
+      items: [
+        'Metformin ke side effects kya hain?',
+        'Kya paracetamol roz lena safe hai?',
+      ],
+    },
   ];
 
   useEffect(() => {
@@ -278,14 +324,14 @@ export const DoctorChat = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =
                   <button 
                     onClick={() => setDisplayLang('EN')}
                     title="Switch to English"
-                    className={`px-3 py-1 text-[10px] font-black rounded-md transition-all ${displayLang === 'EN' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`px-2 py-1 text-[9px] font-black rounded-md transition-all ${displayLang === 'EN' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
                   >
                     EN
                   </button>
                   <button 
                     onClick={() => setDisplayLang('HI')}
                     title="Switch to Hindi"
-                    className={`px-3 py-1 text-[10px] font-black rounded-md transition-all ${displayLang === 'HI' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`px-2 py-1 text-[9px] font-black rounded-md transition-all ${displayLang === 'HI' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
                   >
                     HI
                   </button>
@@ -299,20 +345,28 @@ export const DoctorChat = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =
             {/* Chat Messages */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6">
               {messages.length === 0 && (
-                <div className="space-y-6 text-center pt-10">
-                  <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 inline-block">
+                <div className="space-y-4 pt-4">
+                  <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 text-center">
                     <Sparkles className="w-8 h-8 text-[#f59e0b] mx-auto mb-2" />
-                    <p className="text-slate-300 font-medium">Namaste! How can I help you understand your report today?</p>
+                    <p className="text-slate-200 font-semibold text-sm">Namaste! Main Dr. Umeed hoon 👨‍⚕️</p>
+                    <p className="text-slate-500 text-xs mt-1">Ask me anything in English, Hindi, or Hinglish!</p>
                   </div>
-                  <div className="grid gap-2">
-                    {suggestions.map((s, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleSend(s)}
-                        className="text-sm p-3 rounded-xl border border-slate-800 bg-slate-900/30 text-slate-400 hover:bg-slate-800 hover:text-white transition-all text-left"
-                      >
-                        {s}
-                      </button>
+                  <div className="space-y-3">
+                    {suggestionCategories.map((cat, ci) => (
+                      <div key={ci}>
+                        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-bold mb-1.5 px-1">{cat.label}</p>
+                        <div className="grid gap-1.5">
+                          {cat.items.map((s, si) => (
+                            <button
+                              key={si}
+                              onClick={() => handleSend(s)}
+                              className="text-xs p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-slate-400 hover:bg-slate-800 hover:text-white hover:border-slate-700 transition-all text-left leading-relaxed"
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>

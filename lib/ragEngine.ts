@@ -326,7 +326,7 @@ Provide a comprehensive, evidence-based response.
 
     const groq = new Groq({ apiKey: GROQ_API_KEY });
     const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: augmentedPrompt },
@@ -408,7 +408,7 @@ export const initializeRAG = async (): Promise<void> => {
   console.log('🚀 Initializing Three-Stage RAG Pipeline...');
   console.log(`   Stage 1 (HF flan-t5): ${HF_MODEL}`);
   console.log(`   Stage 2 (FAISS): ${HF_DATASET}`);
-  console.log(`   Stage 3 (Groq): llama-3.3-70b-versatile`);
+  console.log(`   Stage 3 (Groq): llama-3.1-8b-instant`);
 
   await loadFAISSFromHF();
 
