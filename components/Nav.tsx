@@ -6,7 +6,6 @@ import {
   Home, 
   LayoutDashboard, 
   Apple, 
-  Dumbbell, 
   Activity
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -20,7 +19,6 @@ export const Nav = () => {
     { href: '/', icon: Home, label: t('home') },
     { href: '/dashboard', icon: LayoutDashboard, label: t('health') },
     { href: '/nutrition', icon: Apple, label: t('diet') },
-    { href: '/exercise', icon: Dumbbell, label: t('move') },
     { href: '/vitals', icon: Activity, label: 'Vault' },
   ];
 
