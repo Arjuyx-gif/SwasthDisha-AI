@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const flagsSummary = dietaryFlags.join(', ');
 
     const SYSTEM_PROMPT = `
-    You are Dr. Raahat's specialized Dietary AI Coach with 20+ years of clinical nutrition expertise.
+    You are Dr. Umeed's specialized Dietary AI Coach with 20+ years of clinical nutrition expertise.
     Your role is to provide PERSONALIZED, evidence-based dietary guidance tailored to THIS patient's specific lab findings.
 
     PATIENT CONTEXT:

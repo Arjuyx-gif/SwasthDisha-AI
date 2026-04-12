@@ -590,7 +590,7 @@ export default function NutritionPage() {
                   </div>
                 </div>
                 <div className="mt-6 pt-4 border-t border-indigo-500/10 flex justify-between items-center text-[10px] text-indigo-400/60 uppercase font-black">
-                  <span>Dr. Raahat AI v2.0</span>
+                  <span>Dr. Umeed AI v2.0</span>
                   <button onClick={fetchAiInsight} className="hover:text-indigo-300 transition-colors flex items-center gap-1 group">
                     Regenerate <Zap className="w-2.5 h-2.5 group-hover:scale-110 transition-transform" />
                   </button>
@@ -642,7 +642,7 @@ export default function NutritionPage() {
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-black tracking-widest text-[#f59e0b]">
-                      {coachingLanguage === 'EN' ? 'Raahat Chef Tips' : 'राहहत शेफ टिप्स'}
+                      {coachingLanguage === 'EN' ? 'Umeed Chef Tips' : 'उम्मीद शेफ टिप्स'}
                     </span>
                     <div className="mt-2 space-y-2">
                       {(coachingLanguage === 'EN' ? dietPlan.chefTips : dietPlan.chefTipsHi).map((tip, i) => (
