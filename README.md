@@ -40,24 +40,19 @@ The nutrition module is built around your medical flags, not generic RDAs:
 - 1,000+ Indian food database with cultural food suggestions (palak, rajma, amla, ragi, til)
 - AI coaching card powered by **RAG pipeline + Groq** — rendered with a custom inline markdown renderer
 
-### 💪 3 — Adaptive Exercise Planner
-- 7-day dynamic workout schedules generated from your report flags
-- Safety-tiered intensity: anemia patients get gentle yoga; liver patients get walking only
-- Exercise logs with XP and level progression
-
-### 📈 4 — Vitals Vault (Historical Tracking)
+### 📈 3 — Vitals Vault (Historical Tracking)
 - Stores all past reports in a timestamped archive (up to 20)
 - **Biomarker trend charts** via Recharts — track Hemoglobin, ALT, Vitamin D over time
 - Vitality score progression graph
 - Daily vitals logger: Blood Pressure, Heart Rate, Weight
 - **Delete individual reports** from history with confirmation
 
-### 🗣️ 5 — Dr. Umeed (AI Chat)
+### 🗣️ 4 — Dr. Umeed (AI Chat)
 - Contextual Q&A assistant — knows your current report's lab values
 - Streams responses in real-time via Groq API
 - Bilingual: answers in English or Hindi switch
 
-### 🌐 6 — Full Hindi Localisation
+### 🌐 5 — Full Hindi Localisation
 Every UI label, filter button, section header, and status badge switches between English and Hindi via a central `t()` translation system — no hardcoded strings.
 
 ---
