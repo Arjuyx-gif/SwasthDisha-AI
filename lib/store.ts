@@ -139,6 +139,7 @@ function ensureTodayEntry(history: XPHistory[]): XPHistory[] {
 const initialState: Omit<
   GUCState,
   | 'setReportData'
+  | 'setUserProfile'
   | 'toggleLanguage'
   | 'toggleChecklistItem'
   | 'addXP'
