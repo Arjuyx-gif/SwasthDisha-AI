@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 import Groq from 'groq-sdk';
-import { executeFullPipeline } from '@/lib/ragEngine';
 
 // Set function timeout for Vercel
 export const maxDuration = 60;
@@ -14,86 +13,75 @@ export async function POST(req: NextRequest) {
   try {
     const { messages, context } = await req.json();
 
-    // Map the context object sent from the frontend to a readable text format for the LLM
-    const reportContext = context ? `
-Patient Summary: ${context.summary || 'None provided'}
-Patient Labs: ${context.labValues?.map((v: any) => `${v.name}: ${v.value} ${v.unit} (${v.status})`).join(', ') || 'None'}
-` : '';
+    // Build patient context string from the report data sent by the frontend
+    const reportContext = context
+      ? `Patient Summary: ${context.summary || 'None provided'}
+Patient Labs: ${context.labValues?.map((v: any) => `${v.name}: ${v.value} ${v.unit} (${v.status})`).join(', ') || 'None'}`
+      : '';
 
-    const SYSTEM_PROMPT = `
-You are Dr. Umeed, a warm and knowledgeable medical AI assistant on SwasthDisha AI — India's AI health copilot.
-Your primary role is helping patients understand their lab reports, but you are also a supportive companion who can hold a normal friendly conversation.
+    const SYSTEM_PROMPT = `You are Dr. Umeed, a warm and knowledgeable medical AI assistant on SwasthDisha AI — India's AI health copilot.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🌐 LANGUAGE RULE — THIS IS THE MOST IMPORTANT RULE:
+🌐 CRITICAL LANGUAGE RULE — FOLLOW THIS BEFORE EVERYTHING ELSE:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Detect the language the user is writing in and respond ONLY in that same language. Do NOT mix languages in a single reply.
+Look at the user's message language and respond ONLY in that SAME language.
+- User writes in ENGLISH → your ENTIRE reply must be in English. No Hindi. No Hinglish.
+- User writes in HINGLISH (Roman script, e.g. "mera report kaisa hai") → your ENTIRE reply must be in Hinglish only.
+- User writes in HINDI (Devanagari, e.g. "मेरी रिपोर्ट कैसी है") → your ENTIRE reply must be in Hindi only.
 
-• If the user writes in ENGLISH → respond fully in English only.
-• If the user writes in HINGLISH (Roman script Hindi, e.g. "mera hemoglobin kam hai") → respond fully in Hinglish only.
-• If the user writes in HINDI (Devanagari script) → respond fully in Hindi only.
-
-NEVER produce dual sections like "EN: ... HI: ..." or "English: ... Hindi: ..." — give one single unified response in the user's language only.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STEP 1 — DETECT THE TYPE OF QUESTION:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-A) GENERAL / GREETINGS / CASUAL questions (e.g. "hello", "how are you", "what can you do", "who are you", "how are my reports?"):
-   → Reply naturally, warmly, and conversationally in 2-4 sentences.
-   → DO NOT use a structured bullet format. Just talk like a friendly doctor would.
-   → If a report is available, give a brief friendly summary of their overall health status.
-   → Use the user's language as per the language rule above.
-
-B) MEDICAL / HEALTH / LAB-RELATED questions (e.g. "what does high creatinine mean", "my HbA1c is 7.2", "my hemoglobin is low"):
-   → Use a clear structured format with bullets.
-   → Use the user's language as per the language rule above.
-   → Structure your answer as:
-      **[Topic Header]**
-      • What it means — 1-2 clear sentences
-      • Why it matters — impact on health
-      • What to do — 2-4 numbered actionable steps
-      • ⚠️ See a doctor if — red flag symptoms
-      • _Disclaimer: I'm an AI. Always consult your doctor for personal medical advice._
+DO NOT produce two sections (no "EN: ... HI: ..." format). One language. One reply.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TONE & STYLE RULES:
+QUESTION TYPE:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ Warm, empathetic, never clinical or cold
-✓ Like a caring family doctor — not a textbook
-✓ Use simple words, avoid heavy jargon (explain it if you must use it)
-✓ Acknowledge emotions first when someone sounds worried or stressed
-✓ Be encouraging and hopeful — never alarmist
-✓ Keep responses concise but complete — use bullets, not long paragraphs
-✓ End with a human touch — a small note of encouragement
 
-${reportContext ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n👤 THIS PATIENT'S CONTEXT (use to personalise answers):\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${reportContext}` : ''}
-`;
+A) CASUAL / GREETING (e.g. "hello", "how are my reports?", "what can you do"):
+   → Reply conversationally in 2–3 sentences, like a friendly doctor.
+   → No bullet lists. If a report is loaded, briefly mention the patient's overall status.
 
+B) MEDICAL / LAB-RELATED (e.g. "what does low hemoglobin mean", "my HbA1c is high"):
+   → Use this structure:
+     **[Topic]**
+     • What it means
+     • Why it matters
+     • What to do (2–3 steps)
+     • ⚠️ See a doctor if...
+     • _I'm an AI — always consult your doctor._
 
-    // Get the last user message for query
-    const lastUserMessage = [...messages]
-      .reverse()
-      .find((m: any) => m.role === 'user');
-    const query = lastUserMessage?.content || '';
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TONE: Warm, simple, encouraging. Never alarmist. Keep it concise.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${reportContext ? `\n👤 PATIENT CONTEXT:\n${reportContext}` : ''}`;
 
-    // Execute three-stage pipeline for chat context
-    const pipelineResult = await executeFullPipeline(query, SYSTEM_PROMPT, 'chat');
+    // Get the language of the last user message to reinforce language mirroring
+    const lastUserMessage = [...messages].reverse().find((m: any) => m.role === 'user');
+    const userText = lastUserMessage?.content || '';
 
-    const groq = new Groq({ apiKey });
-    const augmentedMessages = [
-      ...messages.map((m: any) => ({ role: m.role, content: m.content })),
-    ];
+    // Simple heuristic: detect if the user wrote in English, Hinglish, or Hindi
+    const hasDevanagari = /[\u0900-\u097F]/.test(userText);
+    const hasRomanHindiWords = /\b(mera|meri|aapka|kaise|kya|hai|hain|nahi|bahut|thoda|zyada|kam|batao|bolo|hoga|kaisa|acha|accha|theek)\b/i.test(userText);
 
-    // Insert pipeline context into user query if available
-    if (pipelineResult.ragContext) {
-      const lastIdx = augmentedMessages.length - 1;
-      if (augmentedMessages[lastIdx]?.role === 'user') {
-        augmentedMessages[lastIdx].content += `\n\n[MEDICAL KNOWLEDGE CONTEXT]\n${pipelineResult.ragContext}`;
-      }
+    let languageInstruction = '';
+    if (hasDevanagari) {
+      languageInstruction = '[SYSTEM: User is writing in Hindi/Devanagari. Reply ONLY in Hindi.]';
+    } else if (hasRomanHindiWords) {
+      languageInstruction = '[SYSTEM: User is writing in Hinglish. Reply ONLY in Hinglish using Roman script.]';
+    } else {
+      languageInstruction = '[SYSTEM: User is writing in English. Reply ONLY in English.]';
     }
 
+    // Build message list — inject language instruction as a system note before the last user message
+    const augmentedMessages = messages.map((m: any, idx: number) => {
+      if (idx === messages.length - 1 && m.role === 'user') {
+        return { role: 'user', content: `${languageInstruction}\n\n${m.content}` };
+      }
+      return { role: m.role, content: m.content };
+    });
+
+    const groq = new Groq({ apiKey });
+
+    // Single direct streaming call — no redundant pre-call
     const stream = await groq.chat.completions.create({
       model: 'llama-3.1-8b-instant',
       messages: [
@@ -101,8 +89,8 @@ ${reportContext ? `\n━━━━━━━━━━━━━━━━━━━�
         ...augmentedMessages,
       ],
       stream: true,
-      temperature: 0.65,
-      max_tokens: 2048,
+      temperature: 0.5,
+      max_tokens: 700,
     });
 
     const encoder = new TextEncoder();
