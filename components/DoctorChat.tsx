@@ -38,18 +38,82 @@ export const DoctorChat = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =
   const [speechState, setSpeechState] = useState<{ id: number | null, paused: boolean }>({ id: null, paused: false });
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Render markdown: **bold**, *italic*, bullet points, numbered lists, line breaks
+  const renderMarkdown = (text: string): React.ReactNode => {
+    const lines = text.split('\n');
+    return lines.map((line, lineIdx) => {
+      const trimmed = line.trim();
+      if (trimmed === '') return <div key={lineIdx} className="h-2" />;
+
+      // Parse inline markdown within a single line
+      const parseInline = (raw: string): React.ReactNode => {
+        const parts: React.ReactNode[] = [];
+        // Regex to match **bold**, *italic*
+        const regex = /\*\*(.+?)\*\*|\*(.+?)\*/g;
+        let last = 0;
+        let match;
+        let key = 0;
+        while ((match = regex.exec(raw)) !== null) {
+          if (match.index > last) parts.push(<span key={key++}>{raw.slice(last, match.index)}</span>);
+          if (match[1] !== undefined) parts.push(<strong key={key++} className="font-bold text-white">{match[1]}</strong>);
+          else if (match[2] !== undefined) parts.push(<em key={key++} className="italic text-slate-300">{match[2]}</em>);
+          last = match.index + match[0].length;
+        }
+        if (last < raw.length) parts.push(<span key={key++}>{raw.slice(last)}</span>);
+        return parts;
+      };
+
+      // Bullet point lines (• or - or *)
+      if (/^[•\-\*]\s/.test(trimmed)) {
+        const content = trimmed.replace(/^[•\-\*]\s/, '');
+        return (
+          <div key={lineIdx} className="flex gap-2 my-0.5">
+            <span className="text-orange-400 mt-0.5 flex-shrink-0">•</span>
+            <span>{parseInline(content)}</span>
+          </div>
+        );
+      }
+
+      // Numbered list lines (1. 2. etc)
+      if (/^\d+\.\s/.test(trimmed)) {
+        const numMatch = trimmed.match(/^(\d+)\.\s(.*)/);
+        if (numMatch) {
+          return (
+            <div key={lineIdx} className="flex gap-2 my-0.5">
+              <span className="text-orange-400 flex-shrink-0 font-bold">{numMatch[1]}.</span>
+              <span>{parseInline(numMatch[2])}</span>
+            </div>
+          );
+        }
+      }
+
+      // ⚠️ warning lines
+      if (trimmed.startsWith('⚠️')) {
+        return (
+          <div key={lineIdx} className="flex gap-2 my-1 text-amber-400">
+            <span>{parseInline(trimmed)}</span>
+          </div>
+        );
+      }
+
+      // Separator lines (━━━)
+      if (/^━+$/.test(trimmed)) {
+        return <hr key={lineIdx} className="border-slate-700 my-2" />;
+      }
+
+      // Regular paragraph line
+      return <p key={lineIdx} className="my-0.5">{parseInline(trimmed)}</p>;
+    });
+  };
+
   const parseMessage = (content: string) => {
-    // Match both "HI:" and "HI/HINGLISH:" delimiters
+    // Strip old EN:/HI: dual-section format if it still appears (legacy fallback)
     const enMatch = content.match(/EN:([\s\S]*?)(?=HI(?:\/HINGLISH)?:|$)/);
     const hiMatch = content.match(/HI(?:\/HINGLISH)?:([\s\S]*?)$/);
-    const enText = enMatch ? enMatch[1].trim() : '';
-    const hiText = hiMatch ? hiMatch[1].trim() : '';
-    // For general/casual responses that have no EN:/HI: structure,
-    // just return the raw content for both so neither tab goes blank
     const isStructured = enMatch !== null;
     return {
-      en: isStructured ? enText : content,
-      hi: isStructured ? (hiText || enText) : content,
+      en: isStructured ? (enMatch![1].trim() || content) : content,
+      hi: isStructured ? (hiMatch ? hiMatch[1].trim() : enMatch![1].trim()) : content,
     };
   };
 
@@ -386,7 +450,13 @@ export const DoctorChat = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =
                     <div className="space-y-1">
                       <div className={`p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-900 text-slate-200 border border-slate-800 rounded-tl-none'}`}>
                         {m.role === 'assistant' ? (
-                          displayLang === 'EN' ? parseMessage(m.content).en : (parseMessage(m.content).hi || parseMessage(m.content).en)
+                          <div className="space-y-0.5">
+                            {renderMarkdown(
+                              displayLang === 'EN'
+                                ? parseMessage(m.content).en
+                                : (parseMessage(m.content).hi || parseMessage(m.content).en)
+                            )}
+                          </div>
                         ) : m.content}
                       </div>
                       {m.role === 'assistant' && (
